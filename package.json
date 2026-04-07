@@ -1,0 +1,106 @@
+{
+	"name": "api-worker",
+	"displayName": "API Worker",
+	"description": "Cursor network forwarding controller",
+	"publisher": "dichvuright",
+	"version": "1.0.5",
+	"icon": "resources/icon.jpg",
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "api-worker.openPoolPage",
+				"title": "API Worker: Open API Config Panel"
+			},
+			{
+				"command": "api-worker.startApiWorker",
+				"title": "API Worker: Start Local Worker"
+			},
+			{
+				"command": "api-worker.showLogs",
+				"title": "API Worker: Show Logs Panel"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "api-worker",
+					"title": "API Worker",
+					"icon": "resources/mainView-icon.svg"
+				}
+			]
+		},
+		"views": {
+			"api-worker": [
+				{
+					"id": "api-worker.mainView",
+					"name": "API Worker",
+					"type": "webview"
+				}
+			]
+		},
+		"configuration": {
+			"title": "API Worker",
+			"properties": {
+				"apiWorker.logLevel": {
+					"type": "string",
+					"default": "info",
+					"enum": [
+						"debug",
+						"info",
+						"warn",
+						"error"
+					],
+					"enumDescriptions": [
+						"Detailed debug information",
+						"General information",
+						"Warning information",
+						"Error information"
+					],
+					"description": "Set the log level"
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run build",
+		"build": "node ./scripts/build.mjs",
+		"compile": "npm run build",
+		"start": "node ./scripts/build.mjs --watch",
+		"package": "npm run build",
+		"package:vsix": "npm run smoke && node ./scripts/package-vsix.mjs",
+		"smoke": "npm run build && node -e \"require('./dist/extension.js');require('./dist/shell.js');require('./dist/mcp-server.js');console.log('all entrypoints load')\"",
+		"run:vscode": "npm run build && node ./scripts/run-editor.mjs code",
+		"run:cursor": "npm run build && node ./scripts/run-editor.mjs cursor",
+		"pretest": "npm run build",
+		"test": "npm run smoke"
+	},
+	"dependencies": {
+		"axios": "^0.24.0",
+		"bson": "^1.1.6"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dichvuright/api-worker.git"
+	},
+	"keywords": [
+		"API",
+		"forwarding",
+		"cursor"
+	],
+	"author": "DichVuRight VN",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/dichvuright/api-worker/issues"
+	},
+	"homepage": "https://github.com/dichvuright/api-worker#readme"
+}

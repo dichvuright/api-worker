@@ -1,0 +1,9 @@
+.cursor-dev
+.cursor-ext
+.vscode-dev
+.vscode-ext
+src
+scripts
+node_modules
+.git
+*.vsix

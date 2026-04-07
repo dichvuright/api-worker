@@ -1,0 +1,16 @@
+# Generated
+dist/
+*.vsix
+
+# Dependencies
+node_modules/
+
+# IDE data
+.cursor-dev/
+.cursor-ext/
+.vscode-dev/
+.vscode-ext/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="vi">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>API Worker</title>
+		<style>
+			:root {
+				--radius-lg: 14px;
+				--radius-md: 10px;
+				--radius-sm: 8px;
+				--card-padding: 16px;
+				--border-color: var(--vscode-panel-border, rgba(127, 127, 127, 0.35));
+				--card-bg: var(--vscode-editorWidget-background, rgba(127, 127, 127, 0.08));
+				--card-bg-muted: var(--vscode-sideBar-background, rgba(127, 127, 127, 0.06));
+				--text-muted: var(--vscode-descriptionForeground, rgba(127, 127, 127, 0.95));
+				--accent: var(--vscode-button-background, #0e639c);
+				--accent-hover: var(--vscode-button-hoverBackground, #1177bb);
+				--btn-text: var(--vscode-button-foreground, #ffffff);
+				--ok: var(--vscode-testing-iconPassed, #3ba55d);
+				--warn: var(--vscode-testing-iconFailed, #d29922);
+				--danger: var(--vscode-errorForeground, #f14c4c);
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				margin: 0;
+				padding: 22px 16px 28px;
+				color: var(--vscode-foreground);
+				background:
+					radial-gradient(circle at 10% 0%, rgba(32, 122, 255, 0.12), transparent 36%),
+					radial-gradient(circle at 96% 12%, rgba(35, 188, 255, 0.1), transparent 28%),
+					var(--vscode-editor-background);
+				font-family: "Segoe UI Variable", "Avenir Next", "PingFang SC", "Noto Sans SC", sans-serif;
+				line-height: 1.45;
+			}
+
+			.container {
+				max-width: 920px;
+				margin: 0 auto;
+			}
+
+			.page-header {
+				margin-bottom: 14px;
+				text-align: center;
+			}
+
+			h1 {
+				margin: 0;
+				font-size: 24px;
+				font-weight: 680;
+				letter-spacing: 0.4px;
+				color: var(--vscode-editor-foreground);
+			}
+
+			.subtitle {
+				margin: 8px auto 0;
+				max-width: 680px;
+				font-size: 13px;
+				color: var(--text-muted);
+			}
+
+			.card {
+				border: 1px solid var(--border-color);
+				border-radius: var(--radius-lg);
+				padding: var(--card-padding);
+				background: linear-gradient(145deg, var(--card-bg), var(--card-bg-muted));
+				backdrop-filter: blur(2px);
+				box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+				margin-bottom: 14px;
+				animation: card-in 0.35s ease both;
+			}
+
+			.section-title {
+				margin: 0 0 12px;
+				font-size: 13px;
+				color: var(--text-muted);
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				font-weight: 620;
+			}
+
+			.version-info {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+				gap: 10px;
+			}
+
+			.info-item {
+				background-color: rgba(127, 127, 127, 0.1);
+				border: 1px solid rgba(127, 127, 127, 0.24);
+				border-radius: var(--radius-md);
+				padding: 10px 12px;
+				min-width: 0;
+			}
+
+			.label {
+				display: block;
+				font-size: 12px;
+				color: var(--text-muted);
+				margin-bottom: 4px;
+			}
+
+			.value {
+				display: block;
+				overflow-wrap: anywhere;
+				font-weight: 600;
+				color: var(--vscode-editor-foreground);
+			}
+
+			.helper-text {
+				margin: 0;
+				font-size: 13px;
+				color: var(--text-muted);
+			}
+
+			.config-grid {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 12px;
+				margin-top: 14px;
+			}
+
+			.field {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				min-width: 0;
+			}
+
+			.field-full {
+				grid-column: 1 / -1;
+			}
+
+			input[type="text"],
+			input[type="password"] {
+				width: 100%;
+				border: 1px solid var(--border-color);
+				border-radius: var(--radius-sm);
+				padding: 10px 12px;
+				background: var(--vscode-input-background, rgba(0, 0, 0, 0.12));
+				color: var(--vscode-input-foreground, var(--vscode-foreground));
+				transition:
+					border-color 0.2s ease,
+					box-shadow 0.2s ease;
+			}
+
+			.action-row {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 10px;
+				margin-top: 14px;
+			}
+
+			button {
+				border: 0;
+				border-radius: var(--radius-sm);
+				padding: 9px 13px;
+				font-size: 13px;
+				font-weight: 600;
+				letter-spacing: 0.02em;
+				cursor: pointer;
+				background: var(--accent);
+				color: var(--btn-text);
+				transition:
+					transform 0.12s ease,
+					opacity 0.2s ease,
+					background-color 0.2s ease;
+			}
+
+			button:hover:not(:disabled) {
+				background: var(--accent-hover);
+				transform: translateY(-1px);
+			}
+
+			button:disabled {
+				opacity: 0.6;
+				cursor: not-allowed;
+			}
+
+			button:focus-visible {
+				outline: 2px solid var(--vscode-focusBorder, #007fd4);
+				outline-offset: 1px;
+			}
+
+			input[type="text"]:focus-visible,
+			input[type="password"]:focus-visible {
+				outline: 2px solid var(--vscode-focusBorder, #007fd4);
+				outline-offset: 1px;
+			}
+
+			.secondary {
+				background: rgba(127, 127, 127, 0.3);
+				color: var(--vscode-foreground);
+			}
+
+			.secondary:hover:not(:disabled) {
+				background: rgba(127, 127, 127, 0.45);
+			}
+
+			.banner {
+				margin-top: 14px;
+				padding: 10px 12px;
+				border-radius: var(--radius-md);
+				border: 1px solid rgba(241, 76, 76, 0.4);
+				background: rgba(241, 76, 76, 0.12);
+				color: var(--danger);
+				font-size: 13px;
+				white-space: pre-wrap;
+				word-break: break-word;
+			}
+
+			.status-banner {
+				margin-top: 14px;
+				padding: 10px 12px;
+				border-radius: var(--radius-md);
+				border: 1px solid rgba(59, 165, 93, 0.36);
+				background: rgba(59, 165, 93, 0.12);
+				color: var(--ok);
+				font-size: 13px;
+				white-space: pre-wrap;
+				word-break: break-word;
+			}
+
+			.hidden {
+				display: none;
+			}
+
+			.table-wrap {
+				border: 1px solid var(--border-color);
+				border-radius: var(--radius-md);
+				overflow: hidden;
+			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+				table-layout: fixed;
+				background: rgba(127, 127, 127, 0.05);
+			}
+
+			th,
+			td {
+				padding: 11px 10px;
+				border-bottom: 1px solid rgba(127, 127, 127, 0.18);
+				text-align: left;
+				font-size: 13px;
+				vertical-align: middle;
+			}
+
+			th {
+				background: rgba(127, 127, 127, 0.18);
+				color: var(--vscode-editor-foreground);
+				font-weight: 620;
+				white-space: nowrap;
+			}
+
+			tbody tr:last-child td {
+				border-bottom: 0;
+			}
+
+			tbody tr:hover {
+				background: rgba(127, 127, 127, 0.11);
+			}
+
+			.product-name {
+				font-weight: 600;
+				overflow-wrap: anywhere;
+			}
+
+			.status-chip {
+				display: inline-flex;
+				align-items: center;
+				min-width: 62px;
+				justify-content: center;
+				border-radius: 999px;
+				padding: 3px 9px;
+				font-size: 12px;
+				font-weight: 620;
+				border: 1px solid transparent;
+			}
+
+			.status-chip.is-on {
+				color: var(--ok);
+				background: rgba(59, 165, 93, 0.12);
+				border-color: rgba(59, 165, 93, 0.35);
+			}
+
+			.status-chip.is-off {
+				color: var(--warn);
+				background: rgba(210, 153, 34, 0.14);
+				border-color: rgba(210, 153, 34, 0.36);
+			}
+
+			.action-cell {
+				width: 220px;
+			}
+
+			.action-group {
+				display: flex;
+				gap: 6px;
+				flex-wrap: wrap;
+			}
+
+			.table-btn {
+				padding: 6px 10px;
+				font-size: 12px;
+				min-width: 72px;
+			}
+
+			.table-btn.secondary {
+				background: rgba(127, 127, 127, 0.3);
+				color: var(--vscode-foreground);
+			}
+
+			.table-btn.secondary:hover:not(:disabled) {
+				background: rgba(127, 127, 127, 0.45);
+			}
+
+			.empty-cell {
+				text-align: center;
+				color: var(--text-muted);
+				padding: 22px 10px;
+			}
+
+			@media (max-width: 760px) {
+				body {
+					padding: 16px 12px 20px;
+				}
+
+				h1 {
+					font-size: 21px;
+				}
+
+				.config-grid {
+					grid-template-columns: 1fr;
+				}
+
+				.table-wrap {
+					overflow-x: auto;
+				}
+
+				table {
+					min-width: 610px;
+				}
+			}
+
+			@keyframes card-in {
+				from {
+					opacity: 0;
+					transform: translateY(5px);
+				}
+
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="container">
+			<header class="page-header">
+				<h1>API Worker chuyển tiếp cục bộ</h1>
+				<p class="subtitle">
+					Worker cục bộ luôn cố định tại <code>127.0.0.1:9182</code>. Bạn chỉ cần nhập
+					<code>API URL</code>, <code>Token</code> và <code>Model</code> thật ngay tại đây,
+					extension sẽ lưu vào file local để IDE tự động chuyển tiếp request đúng đích, không
+					cần mở trang xác thực cũ nữa.
+				</p>
+			</header>
+
+			<div class="card version-card">
+				<p class="section-title">Thông Tin Môi Trường</p>
+				<div class="version-info">
+					<div class="info-item">
+						<span class="label">Phiên bản extension</span>
+						<span id="extensionVersion" class="value">--</span>
+					</div>
+					<div class="info-item">
+						<span class="label">Phiên bản IDE</span>
+						<span id="ideVersion" class="value">--</span>
+					</div>
+					<div class="info-item">
+						<span class="label">Địa chỉ worker cục bộ cố định</span>
+						<span id="localWorkerUrl" class="value">--</span>
+					</div>
+					<div class="info-item">
+						<span class="label">Tác giả</span>
+						<span id="authorName" class="value">--</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="card">
+				<p class="section-title">Cấu Hình API Đích</p>
+				<p class="helper-text">
+					Nhập <code>API URL</code>, <code>Token</code> và <code>Model</code> của dịch vụ AI
+					hoặc gateway bạn muốn sử dụng. Sau khi bấm lưu, extension sẽ ghi cấu hình vào file
+					của local worker để mọi request từ IDE được chuyển tiếp đúng endpoint. Nếu bạn đã đổi endpoint mà request vẫn chạy sang
+					cấu hình cũ, hãy khởi động lại <code>api-worker</code> một lần.
+				</p>
+				<div class="config-grid">
+					<label class="field">
+						<span class="label">API URL đích</span>
+						<input
+							id="apiUrlInput"
+							type="text"
+							placeholder="Ví dụ: https://your-gateway.example.com/v1"
+							spellcheck="false"
+						/>
+					</label>
+					<label class="field">
+						<span class="label">Model mặc định</span>
+						<input
+							id="apiModelInput"
+							type="text"
+							placeholder="Ví dụ: gpt-4.1-mini"
+							spellcheck="false"
+						/>
+					</label>
+					<label class="field field-full">
+						<span class="label">Token API</span>
+						<input
+							id="apiTokenInput"
+							type="password"
+							placeholder="Ví dụ: sk-..."
+							spellcheck="false"
+						/>
+					</label>
+				</div>
+				<div class="action-row">
+					<button id="saveConfigButton">Lưu cấu hình API</button>
+					<button id="clearConfigButton" class="secondary">Xóa nhanh biểu mẫu</button>
+				</div>
+				<div id="statusBanner" class="status-banner hidden"></div>
+				<div id="errorBanner" class="banner hidden"></div>
+			</div>
+
+			<div class="card">
+				<p class="section-title">Quy Trình Kích Hoạt</p>
+				<p class="helper-text">
+					B1: chạy <code>api-worker</code>. B2: lưu cấu hình API ở trên. B3: kích hoạt Cursor
+					để sử dụng cơ chế chuyển tiếp cục bộ. Nếu sau khi lưu mà request vẫn đi tới upstream
+					cũ, hãy tắt và chạy lại local worker một lần rồi làm mới trạng thái.
+				</p>
+				<div class="action-row">
+					<button id="startApiWorkerButton">Chạy api-worker</button>
+					<button id="refreshButton" class="secondary">Làm mới trạng thái</button>
+				</div>
+			</div>
+
+			<div class="card">
+				<p class="section-title">Trạng Thái Sản Phẩm</p>
+				<div class="table-wrap">
+					<table>
+						<thead>
+							<tr>
+								<th>Sản phẩm</th>
+								<th>Đã cài</th>
+								<th>Kích hoạt</th>
+								<th>Thao tác</th>
+							</tr>
+						</thead>
+						<tbody id="ideTableBody">
+							<tr>
+								<td colspan="4" class="empty-cell">Đang tải...</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const vscode = acquireVsCodeApi();
+
+			const startApiWorkerButton = document.getElementById("startApiWorkerButton");
+			const saveConfigButton = document.getElementById("saveConfigButton");
+			const clearConfigButton = document.getElementById("clearConfigButton");
+			const refreshButton = document.getElementById("refreshButton");
+			const statusBanner = document.getElementById("statusBanner");
+			const errorBanner = document.getElementById("errorBanner");
+			const extensionVersion = document.getElementById("extensionVersion");
+			const ideVersion = document.getElementById("ideVersion");
+			const localWorkerUrl = document.getElementById("localWorkerUrl");
+			const authorName = document.getElementById("authorName");
+			const apiUrlInput = document.getElementById("apiUrlInput");
+			const apiTokenInput = document.getElementById("apiTokenInput");
+			const apiModelInput = document.getElementById("apiModelInput");
+			const ideTableBody = document.getElementById("ideTableBody");
+
+			function translateStatusText(statusText) {
+				const text = String(statusText || "").trim();
+				if (!text) {
+					return "";
+				}
+
+				if (/^activated$/i.test(text)) {
+					return "Đã kích hoạt";
+				}
+				if (/^not activated$/i.test(text)) {
+					return "Chưa kích hoạt";
+				}
+				if (/^not found$/i.test(text)) {
+					return "Không tìm thấy";
+				}
+				if (/^disabled$/i.test(text)) {
+					return "Đã vô hiệu hóa";
+				}
+				if (/^inactive$/i.test(text)) {
+					return "Không hoạt động";
+				}
+				if (/^active$/i.test(text)) {
+					return "Đang hoạt động";
+				}
+				if (/^enabled$/i.test(text)) {
+					return "Đã bật";
+				}
+				if (/^failed$/i.test(text)) {
+					return "Thất bại";
+				}
+
+				return text;
+			}
+
+			function translateActionLabel(label) {
+				const text = String(label || "").trim();
+				if (!text) {
+					return "";
+				}
+
+				if (/^activate$/i.test(text)) {
+					return "Kích hoạt";
+				}
+				if (/^deactivate$/i.test(text)) {
+					return "Tắt kích hoạt";
+				}
+				if (/^disable$/i.test(text)) {
+					return "Vô hiệu hóa";
+				}
+				if (/^enable$/i.test(text)) {
+					return "Bật";
+				}
+				if (/^start$/i.test(text)) {
+					return "Khởi động";
+				}
+				if (/^stop$/i.test(text)) {
+					return "Dừng";
+				}
+				if (/^refresh$/i.test(text)) {
+					return "Làm mới";
+				}
+				if (/^remove$/i.test(text)) {
+					return "Gỡ";
+				}
+				if (/^cancel$/i.test(text)) {
+					return "Hủy";
+				}
+
+				return text;
+			}
+
+			function translateUiMessage(message) {
+				const text = String(message || "").trim();
+				if (!text) {
+					return "";
+				}
+
+				if (text === "API config saved to the local worker files") {
+					return "Đã lưu cấu hình API vào file của local worker.";
+				}
+				if (text === "Saved") {
+					return "Đã lưu.";
+				}
+				if (text === "Unknown error") {
+					return "Lỗi không xác định.";
+				}
+				if (text === "Form cleared. Click Save API Config to persist the empty values.") {
+					return "Đã xóa nội dung biểu mẫu. Bấm \"Lưu cấu hình API\" nếu bạn muốn lưu giá trị trống này vào file local.";
+				}
+
+				return text;
+			}
+
+			function normalizeButtons(rawButtons) {
+				if (!Array.isArray(rawButtons)) {
+					return [];
+				}
+				return rawButtons
+					.map((item) => String(item || "").trim())
+					.filter((label) => !!label);
+			}
+
+			function resolveStatusClass(statusText, installed) {
+				if (!installed) {
+					return "is-off";
+				}
+				return /\b(not|none|off|disabled|disable|inactive|deactivated|failed|error|missing)\b/i.test(
+					statusText
+				)
+					? "is-off"
+					: "is-on";
+			}
+
+			function setError(message) {
+				const text = String(message || "").trim();
+				if (!text) {
+					errorBanner.textContent = "";
+					errorBanner.classList.add("hidden");
+					return;
+				}
+
+				errorBanner.textContent = text;
+				errorBanner.classList.remove("hidden");
+			}
+
+			function setStatus(message) {
+				const text = String(message || "").trim();
+				if (!text) {
+					statusBanner.textContent = "";
+					statusBanner.classList.add("hidden");
+					return;
+				}
+
+				statusBanner.textContent = text;
+				statusBanner.classList.remove("hidden");
+			}
+
+			function normalizeConfig(config) {
+				const nextConfig = config && typeof config === "object" ? config : {};
+				return {
+					url: String(nextConfig.url || "").trim(),
+					token: String(nextConfig.token || "").trim(),
+					model: String(nextConfig.model || "").trim(),
+				};
+			}
+
+			function renderConfig(config) {
+				const nextConfig = normalizeConfig(config);
+				apiUrlInput.value = nextConfig.url;
+				apiTokenInput.value = nextConfig.token;
+				apiModelInput.value = nextConfig.model;
+			}
+
+			function renderIdeTable(ideList) {
+				const rows = Array.isArray(ideList) ? ideList : [];
+				ideTableBody.innerHTML = "";
+
+				if (rows.length === 0) {
+					const emptyRow = document.createElement("tr");
+					const emptyCell = document.createElement("td");
+					emptyCell.colSpan = 4;
+					emptyCell.className = "empty-cell";
+					emptyCell.textContent = "Không có sản phẩm khả dụng";
+					emptyRow.appendChild(emptyCell);
+					ideTableBody.appendChild(emptyRow);
+					return;
+				}
+
+				rows.forEach((ide, index) => {
+					const installed = Boolean(ide.installed);
+					const info = ide && typeof ide.info === "object" ? ide.info : {};
+					const rawStatusText = String(info.status || "").trim();
+					const statusText = translateStatusText(rawStatusText);
+					const statusClass = resolveStatusClass(rawStatusText, installed);
+					const tr = document.createElement("tr");
+
+					const nameCell = document.createElement("td");
+					nameCell.className = "product-name";
+					nameCell.textContent = ide.name || "--";
+					tr.appendChild(nameCell);
+
+					const installedCell = document.createElement("td");
+					const installedChip = document.createElement("span");
+					installedChip.className = `status-chip ${installed ? "is-on" : "is-off"}`;
+					installedChip.textContent = installed ? "Có" : "Không";
+					installedCell.appendChild(installedChip);
+					tr.appendChild(installedCell);
+
+					const activeCell = document.createElement("td");
+					const activeChip = document.createElement("span");
+					activeChip.className = `status-chip ${statusClass}`;
+					activeChip.textContent = statusText || "--";
+					activeCell.appendChild(activeChip);
+					tr.appendChild(activeCell);
+
+					const actionCell = document.createElement("td");
+					actionCell.className = "action-cell";
+					const actionGroup = document.createElement("div");
+					actionGroup.className = "action-group";
+
+					const buttons = normalizeButtons(info.btns);
+					buttons.forEach((label, btnIndex) => {
+						const actionButton = document.createElement("button");
+						actionButton.className = /\b(deactivate|disable|stop|cancel|remove|turn off)\b/i.test(
+							label
+						)
+							? "table-btn secondary"
+							: "table-btn";
+						actionButton.textContent = translateActionLabel(label);
+						actionButton.dataset.action = label;
+						actionButton.dataset.actionLabel = label;
+						actionButton.dataset.index = String(index);
+						actionButton.dataset.btnIndex = String(btnIndex);
+						actionButton.disabled = !installed;
+						actionGroup.appendChild(actionButton);
+					});
+
+					actionCell.appendChild(actionGroup);
+					tr.appendChild(actionCell);
+					ideTableBody.appendChild(tr);
+				});
+			}
+
+			function requestRefresh() {
+				setStatus("");
+				setError("");
+				vscode.postMessage({
+					command: "refresh",
+				});
+			}
+
+			function saveConfig() {
+				setStatus("");
+				setError("");
+				vscode.postMessage({
+					command: "saveApiConfig",
+					config: {
+						url: apiUrlInput.value,
+						token: apiTokenInput.value,
+						model: apiModelInput.value,
+					},
+				});
+			}
+
+			startApiWorkerButton.addEventListener("click", () => {
+				setStatus("");
+				setError("");
+				vscode.postMessage({
+					command: "startApiWorker",
+				});
+			});
+
+			saveConfigButton.addEventListener("click", saveConfig);
+
+			clearConfigButton.addEventListener("click", () => {
+				renderConfig({
+					url: "",
+					token: "",
+					model: "",
+				});
+				setStatus(translateUiMessage("Form cleared. Click Save API Config to persist the empty values."));
+				setError("");
+			});
+
+			refreshButton.addEventListener("click", requestRefresh);
+
+			ideTableBody.addEventListener("click", (event) => {
+				const target = event.target;
+				if (!(target instanceof HTMLElement)) {
+					return;
+				}
+				const button = target.closest("button[data-action]");
+				if (!button || button.disabled) {
+					return;
+				}
+
+				const action = String(button.dataset.action || "").trim();
+				const actionLabel = String(button.dataset.actionLabel || button.textContent || "").trim();
+				const index = Number(button.dataset.index);
+				const btnIndex = Number(button.dataset.btnIndex || -1);
+				if (!action || Number.isNaN(index)) {
+					return;
+				}
+
+				setStatus("");
+				setError("");
+				vscode.postMessage({
+					command: "ideAction",
+					action,
+					actionLabel,
+					index,
+					btnIndex,
+				});
+			});
+
+			window.addEventListener("message", (event) => {
+				const message = event.data;
+
+				if (message.command === "getSystemInfo") {
+					extensionVersion.textContent = message.extensionVersion || "--";
+					ideVersion.textContent = message.ideVersion || "--";
+					localWorkerUrl.textContent = message.localWorkerUrl || "--";
+					authorName.textContent = message.author || "--";
+				}
+
+				if (message.command === "updateConfig") {
+					renderConfig(message.config);
+				}
+
+				if (message.command === "updateIdes") {
+					renderIdeTable(message.ides);
+				}
+
+				if (message.command === "saved") {
+					setStatus(translateUiMessage(message.message || "Saved"));
+					setError("");
+				}
+
+				if (message.command === "error") {
+					setStatus("");
+					setError(translateUiMessage(message.message || "Unknown error"));
+				}
+			});
+
+			requestRefresh();
+		</script>
+	</body>
+</html>
