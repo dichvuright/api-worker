@@ -62,14 +62,35 @@ const ALLOW_ENDPOINTS = [
   "/v1/messages",
 ];
 
+// Metrics/telemetry endpoints — silent luôn không forward
+const SILENT_KEYWORDS = [
+  "Metrics",
+  "Analytics",
+  "Telemetry",
+  "Report",
+  "Trace",
+  "IsConnected",
+  "GetServerConfig",
+  "GetEffectiveUserPlugins",
+  "GetDefaultModelNudgeData",
+  "NameTab",
+  "UpdateVscodeProfile",
+  "/v1/traces",
+];
+
 const SILENT_HANDLER = `
 ;(function(){
   const _origFetch = globalThis.fetch;
   const ALLOW = ${JSON.stringify(ALLOW_ENDPOINTS)};
+  const SILENT = ${JSON.stringify(SILENT_KEYWORDS)};
   globalThis.fetch = function(url, opts) {
     const u = String(typeof url === 'string' ? url : url?.url || url?.href || url || '');
-    // Nếu không phải AI endpoint thật → silent 200
     if (u.includes('dichvuright.com') || u.includes('cursor.sh') || u.includes('cursor.com')) {
+      // Silent nếu chứa keyword telemetry
+      if (SILENT.some(p => u.includes(p))) {
+        return Promise.resolve(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
+      }
+      // Silent nếu không nằm trong whitelist AI
       if (!ALLOW.some(p => u.includes(p))) {
         return Promise.resolve(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
       }
