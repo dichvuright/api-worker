@@ -1,33 +1,137 @@
-# API Worker
+<div align="center">
 
-API Worker là extension dùng để chuyển tiếp request từ IDE qua local worker và trỏ tới API đích do bạn tự cấu hình.
+# ⚡ API Worker
 
-## Tính năng chính
+**Cursor AI network controller — proxy local, clean logs, full control.**
 
-- Giao diện cấu hình ngay trong sidebar của IDE
-- Lưu nhanh `API URL`, `Model` và `Token`
-- Chạy `api-worker` local chỉ bằng một nút bấm
-- Kiểm tra trạng thái kích hoạt Cursor forwarding
-- Đóng gói sẵn để cài bằng file `.vsix`
+[![Version](https://img.shields.io/badge/version-1.0.5-blue?style=flat-square)](https://github.com/dichvuright/api-worker/releases)
+[![Platform](https://img.shields.io/badge/platform-Cursor%20%7C%20VSCode-black?style=flat-square)](https://cursor.sh)
+[![License](https://img.shields.io/badge/license-ISC-green?style=flat-square)](./LICENSE.md)
 
-## Cách dùng
+</div>
 
-1. Mở tab `API Worker` ở thanh bên trái
-2. Nhập `API URL`, `Model` và `Token`
-3. Bấm `Lưu cấu hình API`
-4. Bấm `Chạy api-worker`
-5. Kích hoạt Cursor forwarding nếu cần
+---
 
-## Lệnh có sẵn
+## 🚀 Tính năng
 
-- `API Worker: Open API Config Panel`
-- `API Worker: Start Local Worker`
-- `API Worker: Show Logs Panel`
+- **🔀 Proxy local** — Redirect Cursor AI requests về worker chạy trên máy
+- **🔑 Quản lý API Key** — Thêm, xoá, ưu tiên nhiều key từ nhiều provider
+- **🧹 Clean logs** — Filter noise log tự động, chỉ hiện thứ quan trọng
+- **🔕 Silent endpoints** — Tự động trả 200 OK cho analytics, telemetry, network ping
+- **⚙️ Control Panel** — UI trực tiếp trong sidebar Cursor để quản lý worker
+- **🔄 Auto-update** — Worker tự check và cập nhật phiên bản mới
+- **🛡️ MCP Support** — Tích hợp Model Context Protocol server
 
-## Thông tin
+---
 
-- Publisher: `dichvuright`
-- Author: `DichVuRight VN`
+## 📦 Cài đặt
 
-- Version: `1.0.5`
-- License: `MIT`
+### Từ file VSIX (khuyến nghị)
+
+1. Download file `.vsix` từ [Releases](https://github.com/dichvuright/api-worker/releases)
+2. Mở Cursor → `Ctrl+Shift+P` → **Extensions: Install from VSIX...**
+3. Chọn file `.vsix` vừa download
+4. Reload Cursor
+
+### Build từ source
+
+```bash
+git clone https://github.com/dichvuright/api-worker.git
+cd api-worker
+npm install
+npm run package:vsix
+```
+
+File `.vsix` sẽ được tạo ở thư mục gốc.
+
+---
+
+## 🛠️ Development
+
+```bash
+# Build (copy src → dist)
+npm run build
+
+# Build + watch mode
+npm run start
+
+# Build + smoke test
+npm run smoke
+
+# Đóng gói thành .vsix
+npm run package:vsix
+```
+
+> **Lưu ý:** Sau khi sửa code, chạy `npm run package:vsix` rồi cài lại VSIX vào Cursor.
+
+---
+
+## 📁 Cấu trúc project
+
+```
+├── src/
+│   ├── extension.js      # Entry point, patch Cursor workbench
+│   ├── shell.js          # Worker process manager + log filter
+│   └── mcp-server.js     # MCP protocol server
+├── scripts/
+│   ├── build.mjs         # Build script (src → dist)
+│   ├── package-vsix.mjs  # Đóng gói VSIX
+│   └── run-editor.mjs    # Dev runner
+├── webview/
+│   └── pool.html         # Control panel UI
+└── resources/
+    ├── icon.jpg
+    └── mainView-icon.svg
+```
+
+---
+
+## ⚙️ Cách hoạt động
+
+```
+Cursor IDE
+    │
+    │  request đến api2.cursor.sh / api3.cursor.sh / api4.cursor.sh
+    │
+    ▼
+vn.local.dichvuright.com:9182  (127.0.0.1 — local proxy)
+    │
+    ├── Silent endpoints (analytics, telemetry, ping) → 200 OK ngay
+    │
+    └── AI endpoints (StreamChat, StreamCompletion...) → forward upstream
+```
+
+DNS `vn.local.dichvuright.com` trỏ về `127.0.0.1` — worker lắng nghe trên port `9182`.
+
+---
+
+## 📋 Commands
+
+Mở Command Palette (`Ctrl+Shift+P`):
+
+| Command | Mô tả |
+|---------|-------|
+| `API Worker: Open API Config Panel` | Mở control panel |
+| `API Worker: Start Local Worker` | Khởi động worker thủ công |
+| `API Worker: Show Logs Panel` | Xem logs |
+
+---
+
+## 🔧 Troubleshooting
+
+**Worker không start?**
+```powershell
+# Xoá cache worker và restart Cursor
+Remove-Item "$env:TEMP\api-worker" -Force
+Remove-Item "$env:TEMP\api-worker.hash" -Force
+```
+
+**Vẫn thấy log spam?**
+- Đảm bảo đã cài đúng phiên bản VSIX mới nhất
+- Reload Cursor sau khi cài
+
+---
+
+## 📄 License
+
+ISC © [DichVuRight](https://dichvuright.com)
